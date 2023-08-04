@@ -1,0 +1,12 @@
+.vscode
+.env
+.env.backup
+.env.production
+.DS_Store
+.idea
+node_modules
+npm-debug.log
+yarn-error.log
+Homestead.json
+Homestead.yaml
+__pycache__/
