@@ -1,5 +1,7 @@
 import asyncio
 from pubq.realtime import RealTime
+from pubq.rest import REST
+import time
 
 
 def onCreate():
@@ -15,18 +17,26 @@ def onDisconnect(socket):
 
 
 async def main():
+    application_key = "YOUR_API_KEY"
 
-    rt = RealTime("rgaNOj", "k_be5cb4cbe6ba4bf891349af1d6b26bbf")
+    realtime = RealTime(application_key)
 
-    rt.emitter.add_listener("create", onCreate)
-    rt.emitter.add_listener("connect", onConnect)
-    rt.emitter.add_listener("disconnect", onDisconnect)
+    rest = REST(application_key)
+
+    channel = "test_channel"
+    data = "Hello!"
+
+    realtime.emitter.add_listener("create", onCreate)
+    realtime.emitter.add_listener("connect", onConnect)
+    realtime.emitter.add_listener("disconnect", onDisconnect)
 
     def onAuthenticate(event):
         print("Authenticated " + str(event))
-        rt.emitter.add_listener("emitAck", onEmitAck)
-        rt.emitter.add_listener("subscribeAck", onSubscribeAck)
-        rt.subscribe('test', onChannelMessage)
+        realtime.emitter.add_listener("emitAck", onEmitAck)
+        realtime.emitter.add_listener("subscribeAck", onSubscribeAck)
+        realtime.subscribe(channel, onChannelMessage)
+        time.sleep(5)
+        rest.publish(channel, data)
 
     def onEmitAck(event):
         print("Acked emit " + str(event))
@@ -38,6 +48,6 @@ async def main():
         print("Received new data from channel '" +
               str(channel) + "': " + str(data))
 
-    rt.emitter.add_listener("authenticate", onAuthenticate)
+    realtime.emitter.add_listener("authenticate", onAuthenticate)
 
 asyncio.run(main())

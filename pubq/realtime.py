@@ -1,4 +1,6 @@
 import threading
+import base64
+import jwt
 from pyee.base import EventEmitter as EventHandler
 from socketclusterclient import Socketcluster
 
@@ -10,8 +12,7 @@ def threaded(fn):
 
 
 class RealTime:
-    def __init__(self, applicationId, applicationKey, options=None):
-        self.applicationId = applicationId
+    def __init__(self, applicationKey, options=None):
         self.applicationKey = applicationKey
         self.options = options or {}
 
@@ -86,12 +87,12 @@ class RealTime:
             self.connect()
 
     def _onConnect(self, socket):
-        self.emitter.emit("connect", socket)
         self.connectionState = self.OPEN
+        self.emitter.emit("connect", socket)
 
     def _onDisconnect(self, socket):
-        self.emitter.emit("disconnect", socket)
         self.connectionState = self.CLOSED
+        self.emitter.emit("disconnect", socket)
 
     def _onConnectError(self, socket, error):
         self.emitter.emit(
@@ -99,16 +100,45 @@ class RealTime:
 
     def _onSetAuthentication(self, socket, token):
         socket.setAuthtoken(token)
-        self.emitter.emit(
-            "authenticate", {"socket": socket, "token": token})
         self.connectionState = self.AUTHENTICATED
 
-    def _onAuthentication(self, socket, isauthenticated):
-        if not isauthenticated:
+        decodedToken = self._jwtDecode(token)
+        appId = decodedToken["public_key"].split(".")[0]
+        self.applicationId = appId
+
+        self.emitter.emit(
+            "authenticate", {"socket": socket, "token": token})
+
+    def _jwtDecode(self, token):
+        try:
+            # Get the algorithm from the token header
+            header = jwt.get_unverified_header(token)
+            algorithm = header.get('alg')
+
+            # Decode the JWT token and get the payload
+            decodedToken = jwt.decode(
+                token, algorithms=[algorithm], options={"verify_signature": False})
+
+            return decodedToken
+
+        except jwt.ExpiredSignatureError:
+            print("Token has expired.")
+        except jwt.DecodeError:
+            print("Invalid token.")
+        except jwt.InvalidTokenError:
+            print("Token is invalid.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+    def _onAuthentication(self, socket, isAuthenticated):
+        # Base64 encode key
+        encodedKey = base64.b64encode(self.applicationKey.encode('utf-8'))
+        stringifiedKey = encodedKey.decode('utf-8')
+
+        if not isAuthenticated:
             self.authenticationState = self.UNAUTHENTICATED
             socket.emitack("#login", {
-                "applicationId": self.applicationId,
-                "applicationKey": self.applicationKey,
+                "authorization": "Basic " + stringifiedKey,
             }, self._emitAck)
         else:
             self.authenticationState = self.AUTHENTICATED
