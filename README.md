@@ -31,7 +31,7 @@ def onConnect(socket):
 
 async def main():
 
-    realtime = RealTime("YOUR_APPLICATION_ID", "YOUR_APPLICATION_KEY")
+    realtime = RealTime("YOUR_API_KEY")
     realtime.emitter.add_listener("connect", onConnect)
 
 asyncio.run(main())
@@ -52,12 +52,7 @@ Publish a message with REST interface:
 from pubq.rest import REST
 
 if __name__ == "__main__":
-    rest = REST(
-        "YOUR_APPLICATION_ID",
-        "YOUR_APPLICATION_KEY",
-        "YOUR_APPLICATION_SECRET"
-    );
-
+    rest = REST("YOUR_API_KEY");
     rest.publish("my-channel", "Hello!");
 ```
 
