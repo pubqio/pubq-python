@@ -16,7 +16,7 @@ class REST:
         }
 
     def publish(self, channel, data):
-        endpoint = f"{self.baseUrl}/v1/messages/publish"
+        endpoint = f"{self.baseUrl}/v1/channels/messages"
         payload = {"channel": channel, "data": data}
 
         response = requests.post(endpoint, json=payload, headers=self.headers)
