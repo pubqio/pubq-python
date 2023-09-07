@@ -52,7 +52,7 @@ class RealTime:
         }
 
         privateOptions = {
-            "hostname": "rt.pubq.io",
+            "hostname": "realtime.pubq.io",
             "secure": True,
             "port": 443,
             "path": "/",
